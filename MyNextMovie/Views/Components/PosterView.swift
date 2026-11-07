@@ -16,9 +16,11 @@ private let posterTitleMaxLines = 3
 
 /// Movie poster in a 2:3 frame.
 /// Loads the TMDB image when the movie has one, otherwise draws a monochrome placeholder.
+/// Turn `showsTitle` off where the title is already printed next to the poster.
 struct PosterView: View {
     let movie: Movie
     var cornerRadius = posterCornerRadius
+    var showsTitle = true
 
     @Environment(\.redactionReasons) private var redactionReasons
 
@@ -37,20 +39,21 @@ struct PosterView: View {
             AsyncImage(url: posterURL(movie)) { loadedImage in
                 loadedImage.resizable().scaledToFill()
             } placeholder: {
-                PosterPlaceholder(movie: movie)
+                PosterPlaceholder(movie: movie, showsTitle: showsTitle)
             }
         } else {
-            PosterPlaceholder(movie: movie)
+            PosterPlaceholder(movie: movie, showsTitle: showsTitle)
         }
     }
 }
 
 private struct PosterPlaceholder: View {
     let movie: Movie
+    let showsTitle: Bool
 
     var body: some View {
         GeometryReader { geometry in
-            PosterArt(movie: movie, posterWidth: geometry.size.width)
+            PosterArt(movie: movie, posterWidth: geometry.size.width, showsTitle: showsTitle)
         }
     }
 }
@@ -58,6 +61,7 @@ private struct PosterPlaceholder: View {
 private struct PosterArt: View {
     let movie: Movie
     let posterWidth: CGFloat
+    let showsTitle: Bool
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -67,7 +71,7 @@ private struct PosterArt: View {
                 endPoint: .bottomTrailing
             )
             genreSymbol
-            if posterWidth >= minimumPosterWidthForTitle {
+            if showsTitle && posterWidth >= minimumPosterWidthForTitle {
                 posterTitle
             }
         }

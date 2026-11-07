@@ -1,11 +1,15 @@
 import SwiftUI
 
-private let backdropHeight: CGFloat = 440
-private let backdropBlurRadius: CGFloat = 40
+private let backdropHeight: CGFloat = 460
 private let posterWidthOnBackdrop: CGFloat = 200
 private let posterShadowColor = Color.black.opacity(0.35)
 private let posterShadowRadius: CGFloat = 20
 private let posterShadowOffset: CGFloat = 10
+private let statsCornerRadius: CGFloat = 20
+private let overviewLineSpacing: CGFloat = 4
+
+/// Shown in a stat when the value is unknown.
+private let missingValue = "–"
 
 struct MovieDetailView: View {
     let movie: Movie
@@ -20,6 +24,7 @@ struct MovieDetailView: View {
         }
         .ignoresSafeArea(edges: .top)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
     }
 }
 
@@ -46,54 +51,100 @@ private struct MovieBackdrop: View {
     }
 
     private var sharpPoster: some View {
-        PosterView(movie: movie)
+        PosterView(movie: movie, showsTitle: false)
             .frame(width: posterWidthOnBackdrop)
             .shadow(color: posterShadowColor, radius: posterShadowRadius, y: posterShadowOffset)
     }
 }
 
-private struct BlurredPoster: View {
-    let movie: Movie
-    let backdropSize: CGSize
-
-    var body: some View {
-        PosterView(movie: movie, cornerRadius: 0)
-            .frame(width: backdropSize.width)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(width: backdropSize.width, height: backdropSize.height)
-            .blur(radius: backdropBlurRadius, opaque: true)
-    }
-}
-
-/// Title, year and rating, genres and overview under the backdrop.
+/// Title and genres, rating and year, and the overview under the backdrop.
 private struct MovieInfo: View {
     let movie: Movie
 
     var body: some View {
-        VStack(alignment: .leading, spacing: spacingLarge) {
+        VStack(alignment: .leading, spacing: spacingExtraLarge) {
             heading
-            GenreRow(genreIds: knownGenreIds(movie))
+            MovieStats(movie: movie)
             overview
         }
     }
 
     private var heading: some View {
-        VStack(alignment: .leading, spacing: spacingSmall) {
+        VStack(alignment: .leading, spacing: spacingMedium) {
             Text(movie.title)
                 .font(.system(.largeTitle, design: .serif, weight: .bold))
-            Text(yearAndRating(movie))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .accessibilityAddTraits(.isHeader)
+            GenreRow(genreIds: knownGenreIds(movie))
         }
     }
 
     private var overview: some View {
         VStack(alignment: .leading, spacing: spacingSmall) {
             Text("Overview")
-                .font(.headline)
+                .font(.title3.bold())
+                .accessibilityAddTraits(.isHeader)
             Text(movie.overview)
                 .foregroundStyle(.secondary)
+                .lineSpacing(overviewLineSpacing)
         }
+    }
+}
+
+/// Rating and year side by side in a soft panel.
+private struct MovieStats: View {
+    let movie: Movie
+
+    var body: some View {
+        HStack {
+            StatItem(label: "Rating", value: rating, symbolName: symbolNameRatingStar)
+            Divider()
+            StatItem(label: "Year", value: year)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.vertical, spacingLarge)
+        .background(
+            Color(.secondarySystemBackground),
+            in: RoundedRectangle(cornerRadius: statsCornerRadius, style: .continuous)
+        )
+    }
+
+    private var rating: String {
+        formattedRating(movie)
+    }
+
+    private var year: String {
+        let year = releaseYear(movie)
+        return year.isEmpty ? missingValue : year
+    }
+}
+
+private struct StatItem: View {
+    let label: String
+    let value: String
+    var symbolName: String?
+
+    var body: some View {
+        VStack(spacing: spacingExtraSmall) {
+            valueLabel
+            Text(label)
+                .font(.caption.weight(.medium))
+                .textCase(.uppercase)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var valueLabel: some View {
+        HStack(spacing: spacingExtraSmall) {
+            if let symbolName {
+                Image(systemName: symbolName).font(.subheadline)
+            }
+            Text(value).monospacedDigit()
+        }
+        .font(.title3.weight(.semibold))
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
     }
 }
 

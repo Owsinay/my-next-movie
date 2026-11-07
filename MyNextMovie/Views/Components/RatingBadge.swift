@@ -1,7 +1,5 @@
 import SwiftUI
 
-private let ratingBadgeBackground = Color.black.opacity(0.6)
-
 struct RatingBadge: View {
     let movie: Movie
 
@@ -14,8 +12,9 @@ struct RatingBadge: View {
         .font(.caption.weight(.semibold))
         .padding(.horizontal, spacingSmall)
         .padding(.vertical, spacingExtraSmall)
-        .background(ratingBadgeBackground, in: Capsule())
         .foregroundStyle(.white)
+        .background(.ultraThinMaterial, in: Capsule())
+        .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Rating \(formattedRating(movie))")
     }
